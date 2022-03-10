@@ -8,6 +8,8 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.Date;
@@ -17,6 +19,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final int smoothFactor = 10;
 
     TextView op;
+    Button reset;
 
     private  SensorManager sensorManager;
     private  Sensor accelerometer;
@@ -31,6 +34,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         op = findViewById(R.id.textView2);
+        reset = findViewById(R.id.resetButton);
+
+        reset.setOnClickListener(new View.OnClickListener(){
+            @Override
+            //On click function
+            public void onClick(View view) {
+                count=0;
+                op.setText(count+"");
+//                Log.d("fuck","sadfkjasbfjkasbfjkdsabfjksbfjkdsba");
+            }
+        });
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     }

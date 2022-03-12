@@ -12,11 +12,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener  {
     //static final variable
-    private final int smoothFactor = 10;
+    private final double smoothFactor = 30;
 
     TextView op;
     Button reset;
@@ -25,8 +28,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private  Sensor accelerometer;
     private double lowPassAcceleration;
 
+    private ArrayList<Double> filter = new ArrayList<Double>();
 
-    private Date lastUpdate = new Date();
+
+    private long lastUpdate = System.currentTimeMillis();
+    private long lastCountUpdate = System.currentTimeMillis();
     int count=0;
 
     @Override
@@ -42,7 +48,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onClick(View view) {
                 count=0;
                 op.setText(count+"");
-//                Log.d("fuck","sadfkjasbfjkasbfjkdsabfjksbfjkdsba");
             }
         });
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
@@ -57,10 +62,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         float z = sensorEvent.values[2];
         double currentAccelration = Math.sqrt(x*x + y*y + z*z);
 
-        lowPass(currentAccelration);
-        if(lowPassAcceleration>10){
+//        lowPass(currentAccelration);
+        lowPassAcceleration=lowPassLoop(currentAccelration);
+        Log.d("batman",System.currentTimeMillis()-lastUpdate+"");
+        Log.d("superman",lowPassAcceleration+"");
+        if(lowPassAcceleration>10.05 && System.currentTimeMillis()-lastCountUpdate>600){
             count++;
             lowPassAcceleration = 0;
+            lastCountUpdate = System.currentTimeMillis();
         }
         op.setText(count+"");
 
@@ -82,10 +91,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void lowPass(double currAcceleration){
-        Date now = new Date();
-        int elapsedTime = new Date().compareTo(lastUpdate);
-        lowPassAcceleration = lowPassAcceleration + elapsedTime*(currAcceleration-lowPassAcceleration)/smoothFactor;
+        long now = System.currentTimeMillis();
+        long elapsedTime = now-lastUpdate;
+        Log.d("elapsedTime", elapsedTime+"");
+        lowPassAcceleration = lowPassAcceleration + elapsedTime*((currAcceleration-lowPassAcceleration)/(smoothFactor))/1000;
         lastUpdate = now;
+    }
+
+    private double lowPassLoop(double currAcceleration){
+        filter.add(currAcceleration);
+        int size = filter.size();
+        if(size>smoothFactor){
+            filter.remove(0);
+        }
+        double sum = 0;
+        for(double i:filter){
+            sum = sum +i;
+        }
+        return sum/size;
     }
 
 }

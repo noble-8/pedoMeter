@@ -19,7 +19,7 @@ import java.util.Queue;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener  {
     //static final variable
-    private final double smoothFactor = 30;
+    private final double smoothFactor = 10;
 
     TextView op;
     Button reset;
@@ -64,8 +64,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 //        lowPass(currentAccelration);
         lowPassAcceleration=lowPassLoop(currentAccelration);
-        Log.d("batman",System.currentTimeMillis()-lastUpdate+"");
-        Log.d("superman",lowPassAcceleration+"");
+        Log.d("batman",System.currentTimeMillis()-lastCountUpdate+"");
+
         if(lowPassAcceleration>10.05 && System.currentTimeMillis()-lastCountUpdate>600){
             count++;
             lowPassAcceleration = 0;
@@ -94,6 +94,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         long now = System.currentTimeMillis();
         long elapsedTime = now-lastUpdate;
         Log.d("elapsedTime", elapsedTime+"");
+        Log.d("superman",lowPassAcceleration+"");
+        Log.d("curr acceleration",currAcceleration+"");
+        Log.d("mid step calculatoin",elapsedTime*((currAcceleration-lowPassAcceleration)/(smoothFactor))/1000+"");
+
         lowPassAcceleration = lowPassAcceleration + elapsedTime*((currAcceleration-lowPassAcceleration)/(smoothFactor))/1000;
         lastUpdate = now;
     }
@@ -102,7 +106,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         filter.add(currAcceleration);
         int size = filter.size();
         if(size>smoothFactor){
-            filter.remove(0);
+            double out = filter.remove(0);
+            Log.d("removed this",out+"");
         }
         double sum = 0;
         for(double i:filter){

@@ -7,33 +7,32 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Queue;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener  {
-    //static final variable
-    private final double smoothFactor = 10;
+    //tuned parameters set after experimentation
+    private final double smoothFactor = 20;
+    private final double THRESHOLD = 0.2;
+    private final double GRAVITY = 9.8;
+    private final int TIME_BETWEEN_STEPS_MILLISECONDS = 400;
 
     TextView op;
     Button reset;
 
+    //sensor initialization
     private  SensorManager sensorManager;
     private  Sensor accelerometer;
-    private double lowPassAcceleration;
 
     private ArrayList<Double> filter = new ArrayList<Double>();
 
 
     private long lastUpdate = System.currentTimeMillis();
     private long lastCountUpdate = System.currentTimeMillis();
-    int count=0;
+    int numberOfSteps = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,8 +45,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             //On click function
             public void onClick(View view) {
-                count=0;
-                op.setText(count+"");
+                numberOfSteps =0;
+                op.setText(numberOfSteps +"");
             }
         });
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
@@ -57,21 +56,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+
+        //get the sensor data
         float x = sensorEvent.values[0];
         float y = sensorEvent.values[1];
         float z = sensorEvent.values[2];
+        //get the absolute magnitude of the force on the device
         double currentAccelration = Math.sqrt(x*x + y*y + z*z);
 
-//        lowPass(currentAccelration);
-        lowPassAcceleration=lowPassLoop(currentAccelration);
-        Log.d("batman",System.currentTimeMillis()-lastCountUpdate+"");
-
-        if(lowPassAcceleration>10.05 && System.currentTimeMillis()-lastCountUpdate>600){
-            count++;
+        //low pass filter to remove the high frequency noise
+        double lowPassAcceleration = lowPassLoop(currentAccelration);
+        /*
+        * CHECK IF THE ACCELERATION/FORCE ON THE DEVICE IS GREATER THAN THE THRESHOLD SET
+        * ITS NOT POSSIBLE TO TAKE A STEP IN LESS THAN THE THRESHOLD SET IGNORING OTHER JERKS DURING THIS PERIOD, THE TIME THRESHOLD CAN BE LOWERED FOR A RUNNING MODE.
+        * */
+        if(lowPassAcceleration > GRAVITY + THRESHOLD && System.currentTimeMillis()-lastCountUpdate>TIME_BETWEEN_STEPS_MILLISECONDS){
+            numberOfSteps++;
             lowPassAcceleration = 0;
             lastCountUpdate = System.currentTimeMillis();
         }
-        op.setText(count+"");
+        //SET THE VALUE IN THE TEXT BOX
+        op.setText(numberOfSteps +"");
 
     }
 
@@ -90,24 +95,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sensorManager.unregisterListener(this);
     }
 
-    private void lowPass(double currAcceleration){
-        long now = System.currentTimeMillis();
-        long elapsedTime = now-lastUpdate;
-        Log.d("elapsedTime", elapsedTime+"");
-        Log.d("superman",lowPassAcceleration+"");
-        Log.d("curr acceleration",currAcceleration+"");
-        Log.d("mid step calculatoin",elapsedTime*((currAcceleration-lowPassAcceleration)/(smoothFactor))/1000+"");
-
-        lowPassAcceleration = lowPassAcceleration + elapsedTime*((currAcceleration-lowPassAcceleration)/(smoothFactor))/1000;
-        lastUpdate = now;
-    }
 
     private double lowPassLoop(double currAcceleration){
         filter.add(currAcceleration);
         int size = filter.size();
-        if(size>smoothFactor){
-            double out = filter.remove(0);
-            Log.d("removed this",out+"");
+        if(size>=smoothFactor){
+            filter.remove(0);
         }
         double sum = 0;
         for(double i:filter){

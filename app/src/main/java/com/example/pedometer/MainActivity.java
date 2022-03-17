@@ -16,7 +16,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity implements SensorEventListener  {
     //tuned parameters set after experimentation
     private final double smoothFactor = 20;
-    private final double THRESHOLD = 0.2;
+    private final double THRESHOLD = 0.07;
     private final double GRAVITY = 9.8;
     private final int TIME_BETWEEN_STEPS_MILLISECONDS = 400;
 
